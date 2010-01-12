@@ -1,0 +1,127 @@
+[33mcommit 24246d0d6fd64d0edfcfd743629cda162165c21b[m
+Author: dpolant <dpolant@gmail.com>
+Date:   Mon Jan 11 15:57:44 2010 -0500
+
+    js
+
+[1mdiff --git a/js/screen.js b/js/screen.js[m
+[1mnew file mode 100644[m
+[1mindex 0000000..ac8894f[m
+[1m--- /dev/null[m
+[1m+++ b/js/screen.js[m
+[36m@@ -0,0 +1,114 @@[m
+[32m+[m[32mjQuery(document).ready(function(){[m
+[32m+[m	[41m	[m
+[32m+[m	[32mjQuery('#save-members').click(function(){[m
+[32m+[m		[32maddMembersAjax(postToAdd());[m
+[32m+[m	[32m});[m
+[32m+[m	[41m	[m
+[32m+[m	[32mjQuery('#save-members-existing').click(function(){[m
+[32m+[m		[32maddMembersAjax(postToAddExisting());[m
+[32m+[m	[32m});[m
+[32m+[m	[41m	[m
+[32m+[m	[32mjQuery("input[name='send-email[]']").change(function(){[m
+[32m+[m		[41m		[m
+[32m+[m		[32mif ( this.checked ){[m
+[32m+[m			[32mjQuery("input[name='pass'], input[name='conf_pass'], input[name='send']").attr("disabled", "disabled");[m
+[32m+[m			[32mjQuery("label[for='pass'], label[for='conf_pass'], label[for='send']").css("opacity", .5)[m
+[32m+[m		[32m} else {[m
+[32m+[m			[32mjQuery("input[name='pass'], input[name='conf_pass'], input[name='send']").removeAttr("disabled");[m
+[32m+[m			[32mjQuery("label[for='pass'], label[for='conf_pass'], label[for='send']").css("opacity", 1)[m
+[32m+[m		[32m}[m
+[32m+[m	[32m});[m
+[32m+[m	[41m	[m
+[32m+[m	[32mjQuery("input[name='send']").change(function(){[m
+[32m+[m		[41m		[m
+[32m+[m		[32mif ( this.checked ){[m
+[32m+[m			[32mjQuery("input[name='send-email']").attr("disabled", "disabled");[m
+[32m+[m			[32mjQuery("label[for='send-email']").css("opacity", .5)[m
+[32m+[m		[32m} else {[m
+[32m+[m			[32mjQuery("input[name='send-email']").removeAttr("disabled");[m
+[32m+[m			[32mjQuery("label[for='send-email']").css("opacity", 1)[m
+[32m+[m		[32m}[m
+[32m+[m	[32m});[m
+[32m+[m	[41m	[m
+[32m+[m	[32mjQuery(".activity-list a").hover([m
+[32m+[m		[32mfunction(){[m
+[32m+[m			[41m			[m
+[32m+[m			[32mvar isMember = new RegExp("members");[m
+[32m+[m			[32mvar href = jQuery( this ).attr("href");[m
+[32m+[m			[32mvar username = jQuery(this).html();[m
+[32m+[m			[32mvar self = jQuery( this );[m
+[32m+[m			[32mnoDisplay = false;[m
+[32m+[m			[41m			[m
+[32m+[m			[32mif ( isMember.test( href ) ){[m
+[32m+[m				[32mdoFetch = jQuery.post( ajaxurl, {[m
+[32m+[m						[32maction: 'bpgc_screen_fetch_identifying',[m
+[32m+[m						[32m'cookie': encodeURIComponent(document.cookie),[m
+[32m+[m						[32m'username': username[m
+[32m+[m					[32m},[m
+[32m+[m					[32mfunction(response)[m
+[32m+[m					[32m{[m[41m	[m
+[32m+[m						[32m//alert( noDisplay );[m
+[32m+[m						[32mif ( !noDisplay )[m
+[32m+[m							[32mself.after("<a class='activity-identifying-group' href='#'>hi there</a>");[m
+[32m+[m					[32m});[m[41m		[m
+[32m+[m			[32m}[m
+[32m+[m		[32m},[m
+[32m+[m		[32mfunction(){[m[41m	[m
+[32m+[m			[32mvar nextEl = jQuery( this ).next();[m
+[32m+[m			[41m			[m
+[32m+[m			[32mnoDisplay = true;[m
+[32m+[m				[41m				[m
+[32m+[m			[32mif ( nextEl.hasClass('activity-identifying-group') )[m
+[32m+[m				[32mnextEl.remove();[m
+[32m+[m		[32m}[m
+[32m+[m	[32m);[m
+[32m+[m	[41m	[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mfunction addMembersAjax(postObj) {[m
+[32m+[m	[32mjQuery('.bpgc-ajax-loader').toggle();[m
+[32m+[m		[32mjQuery('#save-members').attr({'disabled': true});[m
+[32m+[m		[41m		[m
+[32m+[m		[32mjQuery.post( ajaxurl, postObj,[m
+[32m+[m			[32mfunction(response)[m
+[32m+[m			[32m{[m[41m		[m
+[32m+[m				[32mjQuery('.bpgc-ajax-loader').toggle();[m
+[32m+[m				[32mjQuery('#message').remove();[m
+[32m+[m				[32mjQuery('#save-members').attr({'disabled': false});[m
+[32m+[m				[32mjQuery('#create-group-form').prepend(response);[m
+[32m+[m			[32m});[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction postToAdd(){[m
+[32m+[m	[32mreturn {[m
+[32m+[m		[32maction: 'bpgc_create_screen_add_members_save',[m
+[32m+[m		[32m'cookie': encodeURIComponent(document.cookie),[m
+[32m+[m		[32m'_wpnonce': jQuery("input#_wpnonce-add-member-save").val(),[m
+[32m+[m		[32m'username': jQuery("input[name='username']").val(),[m
+[32m+[m		[32m'name': jQuery("input[name='name']").val(),[m
+[32m+[m		[32m'pass': jQuery("input[name='pass']").val(),[m
+[32m+[m		[32m'conf_pass': jQuery("input[name='conf_pass']").val(),[m
+[32m+[m		[32m'email': jQuery("input[name='email']").val(),[m
+[32m+[m		[32m'make-identifying': jQuery("input[name='make-identifying[]']").val(),[m
+[32m+[m		[32m'group-admin': jQuery("input[name='group-admin[]']").val(),[m
+[32m+[m		[32m'send-email': jQuery("input[name='send-email[]']").val(),[m
+[32m+[m		[32m'send': jQuery("input[name='send[]']").val()[m
+[32m+[m	[32m};[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction postToAddExisting(){[m
+[32m+[m	[32mreturn {[m
+[32m+[m		[32maction: 'bpgc_create_screen_add_members_save',[m
+[32m+[m		[32m'existing': 1,[m
+[32m+[m		[32m'cookie': encodeURIComponent(document.cookie),[m
+[32m+[m		[32m'_wpnonce': jQuery("input#_wpnonce-add-member-save").val(),[m
+[32m+[m		[32m'username': jQuery("input[name='username']").val(),[m
+[32m+[m		[32m'make-identifying': jQuery("input[name='make-identifying[]']").val(),[m
+[32m+[m		[32m'group-admin': jQuery("input[name='group-admin[]']").val()[m
+[32m+[m	[32m};[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction clearOptions(){[m
+[32m+[m	[32mjQuery("input[type='text']").val("");[m
+[32m+[m	[32mjQuery("input[type='checkbox']").checked("false");[m
+[32m+[m[32m}[m
+\ No newline at end of file[m

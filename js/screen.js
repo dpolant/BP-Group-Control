@@ -30,6 +30,14 @@ jQuery(document).ready(function(){
 		}
 	});
 	
+	jQuery("input[name='reassign[]']").change(function(){
+		//alert("hi");										   
+		if ( jQuery("input[name='reassign[]']:checked").val() == "reassign-to" )											   
+			jQuery("select[name='reassign-select']").fadeIn();
+		else
+			jQuery("select[name='reassign-select']").fadeOut();
+	});
+	/*
 	jQuery(".activity-list a").hover(
 		function(){
 			
@@ -61,7 +69,7 @@ jQuery(document).ready(function(){
 			if ( nextEl.hasClass('activity-identifying-group') )
 				nextEl.remove();
 		}
-	);
+	);*/
 	
 });
 
