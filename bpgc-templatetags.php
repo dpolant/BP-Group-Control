@@ -7,7 +7,15 @@ function bpgc_manage_members_links(){
         });
             </script>
     
-	<h5><?php bpgc_the_delete_members_link()?> <?php bpgc_the_eject_members_link() ?> <?php bpgc_print_identifying_button() ?></h5><?php
+	<h5><?php 
+	if ( bpgc_is_deletable() )
+		do_action( "bpgc_delete_member_link" );
+        
+	if ( bpgc_is_ejectable() )
+		bpgc_the_eject_members_link();
+	
+	if ( bpgc_identifying_button_is_printable() )
+		do_action( "bpgc_after_manage_links" ); ?></h5><?php
 }
 
 function bpgc_the_delete_members_confirm_action( $args = '' ) { 
@@ -52,10 +60,8 @@ function bpgc_is_deletable(){
 	return false;
 }
 
-function bpgc_the_delete_members_link( $args = '' ) { 
-	if ( bpgc_is_deletable() ){ ?>
-        <span class='small'><a href="<?php echo bpgc_get_delete_members_link( $args ) ?>" class="confirm bpgc-delete" id="bpgc-delete" title="<?php _e( 'Delete account', 'bp-group-control' ); ?>"><?php _e( 'Delete account', 'bp-group-control' ); ?></a></span> <?php
-	}
+function bpgc_the_delete_members_link( $args = '' ) { ?>
+    <span class='small'><a href="<?php echo bpgc_get_delete_members_link( $args ) ?>" class="confirm bpgc-delete" id="bpgc-delete" title="<?php _e( 'Delete account', 'bp-group-control' ); ?>"><?php _e( 'Delete account', 'bp-group-control' ); ?></a></span> <?php
 }
 	function bpgc_get_delete_members_link( $args = '' ) {
 		global $members_template, $groups_template, $bp;
@@ -76,17 +82,16 @@ function bpgc_is_ejectable(){
 	global $bp, $members_template;
 	
 	$user_id = $members_template->member->user_id;
-
-	if ( $user_id != $bp->loggedin_user->id )
+	$user = get_userdata( $user_id );
+	
+	if ( $user_id != $bp->loggedin_user->id && !is_site_admin( $user->user_login ) )
 		return true;
 		
 	return false;
 }
 	
-function bpgc_the_eject_members_link( $args = '' ) { 
-	if ( bpgc_is_ejectable() ){ ?>
-		<span class='small'><a href="<?php echo bpgc_get_eject_members_link( $args ) ?>" class="confirm bpgc-delete" title="<?php _e( 'Eject', 'bp-group-control' ); ?>"><?php _e( 'Eject user from group', 'bp-group-control' ); ?></a></span> <?php
-	}
+function bpgc_the_eject_members_link( $args = '' ) { ?>
+	<span class='small'><a href="<?php echo bpgc_get_eject_members_link( $args ) ?>" class="confirm bpgc-delete" title="<?php _e( 'Eject', 'bp-group-control' ); ?>"><?php _e( 'Eject user from group', 'bp-group-control' ); ?></a></span> <?php
 }
 	function bpgc_get_eject_members_link( $args = '' ) {
 		global $members_template, $groups_template, $bp;
@@ -101,6 +106,18 @@ function bpgc_the_eject_members_link( $args = '' ) {
 
 		return apply_filters( 'bpgc_get_eject_members_link', wp_nonce_url( bp_get_group_permalink( $group ) . '/admin/manage-members/eject/' . $user_id, 'groups_eject_member' ) );
 	}
+
+function bpgc_identifying_button_is_printable(){
+	global $bp, $members_template;
+	
+	$user_id = $members_template->member->user_id;
+	$user = get_userdata( $user_id );
+	
+	if ( !is_site_admin( $user->user_login ) )
+		return true;
+		
+	return false;
+}
 	
 function bpgc_print_identifying_button( $group_id = false ){
 	global $bp, $groups_template, $current_user, $identifying_group, $members_template;
@@ -113,36 +130,37 @@ function bpgc_print_identifying_button( $group_id = false ){
 	} else {
 		$group = bpgc_get_group($group_id);
 	}
-
-    if ( !( groups_is_user_member( $current_user->ID, $group->id ) && bp_is_group_home() ) )
+	
+	if ( $bp->displayed_user->id )
+		$user_id = $bp->displayed_user->id;
+	else
+		$user_id = $members_template->member->user_id;
+		
+    if ( ( !groups_is_user_member( $current_user->ID, $group->id ) && bp_is_group_home() ) )
 		return false; 
 		
 	if ( ( get_option( 'bpgc-identifying-enable-public' ) && $group->status == 'public' ) || ( get_option( 'bpgc-identifying-enable-private' ) && $group->status == 'private' ) ){	
 	
 		//if it is a group home page or it is one's own profile ...
 		if ( bp_is_group_home() || $bp->displayed_user->id == $bp->loggedin_user->id ){
+			
 			if ( bpgc_has_identifying_group($group->id) ){ ?>
 				<div class="generic-button group-button">
 					<a class="leave-group" href="<?php echo wp_nonce_url( bp_get_group_permalink( $group ) . "/remove-identifying", 'bpgc_remove_identifying')?>">Remove identifying</a>
 				</div>
 	
-	<?php } elseif ( bp_is_group_home() || bp_is_user_groups() ){ ?>
+	<?php } else{ ?>
 	
 				<div class="generic-button group-button">
 					<a class="send-message" href="<?php echo wp_nonce_url( bp_get_group_permalink( $group ) . "/identifying", 'bpgc_make_identifying')?>">Make identifying</a>
 				</div>
 		
 		<?php }
-		}
-		
+		}	
 		//if it is a site admin and not his/her own profile and not a group homepage ...
-		else if ( is_site_admin() ){
-			if ( $bp->displayed_user->id )
-				$user_id = $bp->displayed_user->id;
-			else
-				$user_id = $members_template->member->user_id;
-				
-			if ( bpgc_has_identifying_group($group->id, $bp->displayed_user->id)){ ?>
+		else if ( is_site_admin() || ( $bp->is_item_admin && bp_is_group_admin_screen( 'manage-members' ) ) ){	
+
+			if ( bpgc_has_identifying_group($group->id, $user_id )){ ?>
 				<div class="generic-button group-button">
 					<a class="leave-group" href="<?php echo wp_nonce_url( bp_get_group_permalink( $group ) . "/remove-identifying/" . $user_id, 'bpgc_remove_identifying')?>">Remove identifying</a>
 				</div>
@@ -229,13 +247,15 @@ function bpgc_has_identifying($user_id = false){
 }
 
 function bpgc_has_identifying_group($group_id, $user_id = false ) {
-	global $bp, $site_members_template;
+	global $bp, $site_members_template, $members_template;
 	
 	if (!$user_id) {
 		if ($bp->displayed_user->id)
 			$user_id = $bp->displayed_user->id;
 		elseif ($site_members_template->member->id)
 			$user_id = $site_members_template->member->id;
+		elseif ($members_template->member->user_id)
+			$user_id = $members_template->member->user_id;
 		else 
 			$user_id = $bp->loggedin_user->id;
 	}

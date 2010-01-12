@@ -34,6 +34,7 @@ function bpgc_register_options(){
 	register_setting( 'bpgc-admin', 'bpgc-site-admin-can-add-existing' );
 	register_setting( 'bpgc-admin', 'bpgc-group-admin-can-add-existing' );
 	register_setting( 'bpgc-admin', 'bpgc-group-admin-can-add-new' );
+	register_setting( 'bpgc-admin', 'bpgc-group-admin-can-delete' );
 	register_setting( 'bpgc-admin', 'bpgc-users-can-select-identifying' );
 	register_setting( 'bpgc-admin', 'bpgc-site-admins-can-select-identifying' );
 	register_setting( 'bpgc-admin', 'bpgc-group-admins-can-select-identifying' );
@@ -373,12 +374,17 @@ add_action( 'wp_ajax_bpgc_create_screen_add_members_save', 'bpgc_create_screen_a
 
 /**************** Conditional Actions ***************/
 
+/* bpgc_identifying_conditional_actions() handles option dependent components. Template tags are used to determine button and text placement
+ * on a user-to-user basis
+ */
 function bpgc_identifying_conditional_actions(){
 
 	if ( get_option( 'bpgc-identifying-enable-public' ) || get_option( 'bpgc-identifying-enable-private' )) {
 		add_action( 'wp', 'bpgc_make_identifying', 3 );
 		add_action( 'wp', 'bpgc_remove_identifying', 3 );
-		add_action( 'groups_leave_group', 'bpgc_remove_identifying');
+		add_action( 'bpgc_eject_member', 'bpgc_do_remove_identifying', 1);
+		add_action( 'groups_remove_data_for_user', 'bpgc_do_remove_identifying', 1);
+		add_action( 'groups_uninvite_user', 'bpgc_do_remove_identifying', 10, 2);
 		add_action( 'bp_directory_members_item', 'bpgc_print_identifying_title');
 		add_action('bp_profile_header_content', 'bpgc_print_identifying_title');
 		//add_action( 'bp_group_manage_members_admin_item', 'bpgc_print_identifying_button' );
@@ -387,7 +393,10 @@ function bpgc_identifying_conditional_actions(){
 			add_action( 'bp_profile_header_content', 'bpgc_print_identifying_button');
 			add_action( 'bp_group_menu_buttons', 'bpgc_print_identifying_button' );
 			add_action( 'bp_before_my_groups_list_item', 'bpgc_print_identifying_button' );			
-		}	
+		}
+		
+		if ( get_option( 'bpgc-group-admins-can-select-identifying' ) || is_site_admin() )
+			add_action( 'bpgc_after_manage_links', 'bpgc_print_identifying_button' );
 	}
 }
 add_action( 'plugins_loaded', 'bpgc_identifying_conditional_actions' );
@@ -407,6 +416,10 @@ function bpgc_member_control_conditional_actions(){
 			
 			add_action( "wp", array( &$add_members, "_register" ), 2 );
 			add_action( 'wp', 'bpgc_delete_member_screen', 4 );
+			
+			if ( get_option( 'bpgc-group-admin-can-delete' ) || is_site_admin() )
+				add_action( 'bpgc_delete_member_link', 'bpgc_the_delete_members_link' );
+				
 			add_action( 'wp', 'bpgc_confirm_delete_member', 4 );
 			add_action( 'wp', 'bpgc_confirm_eject_member', 4 );
 			add_action( 'bp_group_manage_members_admin_item', 'bpgc_manage_members_links' );
@@ -502,10 +515,12 @@ function bpgc_confirm_eject_member(){
 				return false;
 				
 			if ( $user_id != $bp->loggedin_user->id ) {	
-				if ( groups_uninvite_user($user_id, $bp->groups->current_group->id ) )				
+				if ( groups_uninvite_user($user_id, $bp->groups->current_group->id ) ){			
 					bp_core_add_message( "User ejected" );
-				else 
+					do_action('bpgc_eject_member', $user_id );
+				} else {
 					bp_core_add_message( "Error ejecting user" );
+				}
 			} else {
 				bp_core_add_message( __('You cannot eject yourself from a group', 'bp-group-control'), 'error' );
 			}
@@ -525,11 +540,11 @@ function bpgc_make_identifying(){
 		return;
 
 	check_admin_referer('bpgc_make_identifying');
-	
-	if ($bp->action_variables[0] && is_site_admin() )
-		$user_id = $bp->action_variables[0];
-	else
-		$user_id = $current_user->ID;
+
+		if ($bp->action_variables[0] && ( is_site_admin() || $bp->is_item_admin ) )
+			$user_id = $bp->action_variables[0];
+		else
+			$user_id = $current_user->ID;
 	
 	bpgc_do_make_identifying($user_id);
 	bp_core_redirect( bpgc_get_user_permalink($user_id) );
@@ -551,18 +566,20 @@ function bpgc_remove_identifying(){
 	$user = get_userdata( $user_id );
 	$group_name = $bp->groups->current_group->name;
 		
-	if ( delete_usermeta( $user_id, 'bpgc_identifying')){
+	if ( bpgc_do_remove_identifying( $user_id )){
 		if ( $user_id == $bp->loggedin_user->id )
 			$msg = $group_name . " is no longer your identifying group";
 		else
 			$msg = $group_name . " is no longer " . $user->display_name . "'s identifying group";
 			
+		do_action('bpgc_remove_identifying');	
+		
 		bp_core_add_message(  __($msg, 'bp-group-control') );
 	} else{
 		bp_core_add_message( __('Error removing identifying group, please try again.', 'bp-group-control'), 'error' );
 	}
 	
-	do_action('bpgc_remove_identifying');
+	
 	
 	bp_core_redirect( bpgc_get_user_permalink($user_id) );
 }
@@ -810,10 +827,10 @@ function bpgc_do_make_identifying($user_id = false, $group_id = false){
 	$user = get_userdata( $user_id );
 	
 	if (bpgc_has_identifying())
-		delete_usermeta( $user_id, 'bpgc_identifying');
+		bpgc_do_remove_identifying( $user_id );
 	
 	if ( !update_usermeta( $user_id, 'bpgc_identifying', $group_id)) {
-		bp_core_add_message(  __('There was an error making' . $group_name . 'group your identifying group. Please try again.', 'bp-group-control'), 'error' );
+		bp_core_add_message(  __('There was an error making' . $group_name . 'group your identifying group. Please try again. ' . $user_id . ' ' . $group_id, 'bp-group-control'), 'error' );
 		
 		do_action('bpgc_make_identifying');
 		return false;
@@ -827,5 +844,14 @@ function bpgc_do_make_identifying($user_id = false, $group_id = false){
 	}
 	
 	do_action('bpgc_do_make_identifying');
+}
+
+function bpgc_do_remove_identifying( $group_id = false, $user_id ){
+
+	if ( delete_usermeta( $user_id, 'bpgc_identifying') ) {
+		return true;
+	}
+
+	return false;
 }
 ?>

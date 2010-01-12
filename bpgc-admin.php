@@ -106,6 +106,20 @@
                     </tbody>
                 </table>
             </fieldset>
+                        <h4><?php _e( 'Allow group admins to delete member accounts that they create?', 'bp-groups-control' ) ?></h4>
+            	<fieldset>
+                
+                 <table class="form-table">
+                 	<tbody>
+                        <tr>
+                            <th scope="row"><?php _e( 'Yes', 'bp-groups-control' ) ?>:</th>
+                            <td>
+                                <input type="checkbox" name='bpgc-group-admin-can-delete[]' <?php if ( get_option('bpgc-group-admin-can-delete') ) : ?>checked='checked' <?php endif; ?>/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </fieldset>
             <h3>Identifying group settings</h3>
             <p>Members can choose to have one group appear as an identifying tag on their profile.</p>
             <h4>Customize identifying text/style/layout</h4>
