@@ -381,7 +381,7 @@ function bpgc_identifying_conditional_actions(){
 		add_action( 'groups_leave_group', 'bpgc_remove_identifying');
 		add_action( 'bp_directory_members_item', 'bpgc_print_identifying_title');
 		add_action('bp_profile_header_content', 'bpgc_print_identifying_title');
-		add_action( 'bp_group_manage_members_admin_item', 'bpgc_print_identifying_button' );
+		//add_action( 'bp_group_manage_members_admin_item', 'bpgc_print_identifying_button' );
 		
 		if ( get_option( 'bpgc-users-can-select-identifying' ) || is_site_admin() ) {
 			add_action( 'bp_profile_header_content', 'bpgc_print_identifying_button');
@@ -406,8 +406,10 @@ function bpgc_member_control_conditional_actions(){
 			$add_members = new BPGC_Add_Members_Group_Extension;
 			
 			add_action( "wp", array( &$add_members, "_register" ), 2 );
+			add_action( 'wp', 'bpgc_delete_member_screen', 4 );
 			add_action( 'wp', 'bpgc_confirm_delete_member', 4 );
-			add_action( 'bp_group_manage_members_admin_item', 'bpgc_the_delete_members_link' );
+			add_action( 'wp', 'bpgc_confirm_eject_member', 4 );
+			add_action( 'bp_group_manage_members_admin_item', 'bpgc_manage_members_links' );
 		}
 		if ( bpgc_check_group_has_member_control( $group->id, 'existing' ) && ( ( is_site_admin() && get_option('bpgc-site-admin-can-add-existing') ) || ( $bp->is_item_admin && get_option('bpgc-group-admin-can-add-existing') ) ) ){
 			$add_existing = new BPGC_Add_Existing_Members_Group_Extension;
@@ -427,6 +429,22 @@ function bpgc_restrictions() {
 }
 add_action( 'plugins_loaded', 'bpgc_restrictions' );
 
+/**************** Screen functions ***************/
+
+function bpgc_delete_member_screen(){
+	global $bp;
+	
+	if ( $bp->current_component == $bp->groups->slug && 'manage-members' == $bp->action_variables[0] ) {
+			
+		if ( 'delete' == $bp->action_variables[1] && is_numeric( $bp->action_variables[2] ) ) {
+			$user_id = $bp->action_variables[2];	
+	
+			$temp = apply_filters( 'bpgc_delete_member', 'bp-group-control/confirm-delete-member' );
+			bp_core_load_template($temp);
+		}
+	}
+}
+
 /**************** Action functions ***************/
 
 function bpgc_confirm_delete_member(){
@@ -437,15 +455,24 @@ function bpgc_confirm_delete_member(){
 		if ( !$bp->is_item_admin )
 			return false;
 			
-		if ( 'delete' == $bp->action_variables[1] && is_numeric( $bp->action_variables[2] ) ) {
-			$user_id = $bp->action_variables[2];	
+		if ( 'delete-confirm' == $bp->action_variables[1] ) {
+			$user_id = $_POST['user-id'];
 			
+			if ( $_POST['reassign'] == 'reassign-to' )
+				$reassign = $_POST['reassign-select'];
+			elseif ( $_POST['reassign'] == 'reassign-me' )
+				$reassign = $bp->loggedin_user->id;
+			//print_r($_POST['reassign-select']);
+			//bp_core_add_message( $reassign );
+				//return;
+
 			if ( !check_admin_referer( 'groups_delete_member' ) )
 				return false;
-				
-			if ( ( get_usermeta( $user_id, "created_by" ) == $bp->loggedin_user->id ) || is_site_admin() ) {
 			
-				if ( wp_delete_user( $user_id ) ) {				
+			$creator_id = get_usermeta( $user_id, "created_by" );
+				
+			if ( ( $creator_id == $bp->loggedin_user->id ) || ( is_site_admin() && $user_id != $bp->loggedin_user->id ) ){
+				if ( wp_delete_user( $user_id, $reassign ) ) {				
 					//hack for old 1.1s ???
 					$wpdb->query( $wpdb->prepare("DELETE FROM $wpdb->users WHERE ID = %d", $user_id) );
 					
@@ -455,6 +482,32 @@ function bpgc_confirm_delete_member(){
 				}
 			} else {
 				bp_core_add_message( __('You cannot delete that user because you did not create him/her', 'bp-group-control'), 'error' );
+			}
+		}
+	}
+}
+
+function bpgc_confirm_eject_member(){
+	global $bp, $wpdb, $group;
+
+	if ( $bp->current_component == $bp->groups->slug && 'manage-members' == $bp->action_variables[0] ) {
+		
+		if ( !$bp->is_item_admin )
+			return false;
+
+		if ( 'eject' == $bp->action_variables[1] && is_numeric( $bp->action_variables[2] ) ) {
+			$user_id = $bp->action_variables[2];	
+			
+			if ( !check_admin_referer( 'groups_eject_member' ) )
+				return false;
+				
+			if ( $user_id != $bp->loggedin_user->id ) {	
+				if ( groups_uninvite_user($user_id, $bp->groups->current_group->id ) )				
+					bp_core_add_message( "User ejected" );
+				else 
+					bp_core_add_message( "Error ejecting user" );
+			} else {
+				bp_core_add_message( __('You cannot eject yourself from a group', 'bp-group-control'), 'error' );
 			}
 		}
 	}
@@ -517,7 +570,6 @@ function bpgc_remove_identifying(){
 /**************** Utility functions ***************/
 
 function bpgc_check_group_has_member_control( $group_id, $member_control_type ){
-	global $wpdb;
 
 	$group = bpgc_get_group( $group_id );
 	$creator_id = $group->creator_id;
