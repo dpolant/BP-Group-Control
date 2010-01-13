@@ -45,13 +45,13 @@ function bpgc_register_options(){
 add_action( 'admin_init', 'bpgc_register_options' );
 
 function bpgc_scripts(){
-	wp_enqueue_script('bpgc_screen', WP_PLUGIN_URL . '/bp-group-control/js/screen.js');
-	wp_enqueue_script('jquery-timers', WP_PLUGIN_URL . '/bp-group-control/js/jquery.timers-1.2.js');
+	wp_enqueue_script('bpgc_screen', WP_PLUGIN_URL . '/BP-Group-Control/js/screen.js');
+	//wp_enqueue_script('jquery-timers', WP_PLUGIN_URL . '/BP-Group-Control/js/jquery.timers-1.2.js');
 }
 add_action('init', 'bpgc_scripts');
 
 function bpgc_stylesheet(){
-	wp_enqueue_style('bpgc_screen', WP_PLUGIN_URL . '/bp-group-control/css/screen.css');
+	wp_enqueue_style('bpgc_screen', WP_PLUGIN_URL . '/BP-Group-Control/css/screen.css');
 }
 add_action('init', 'bpgc_stylesheet');
 
@@ -566,7 +566,7 @@ function bpgc_remove_identifying(){
 	$user = get_userdata( $user_id );
 	$group_name = $bp->groups->current_group->name;
 		
-	if ( bpgc_do_remove_identifying( $user_id )){
+	if ( bpgc_do_remove_identifying( '', $user_id )){
 		if ( $user_id == $bp->loggedin_user->id )
 			$msg = $group_name . " is no longer your identifying group";
 		else
@@ -827,7 +827,7 @@ function bpgc_do_make_identifying($user_id = false, $group_id = false){
 	$user = get_userdata( $user_id );
 	
 	if (bpgc_has_identifying())
-		bpgc_do_remove_identifying( $user_id );
+		bpgc_do_remove_identifying( '', $user_id );
 	
 	if ( !update_usermeta( $user_id, 'bpgc_identifying', $group_id)) {
 		bp_core_add_message(  __('There was an error making' . $group_name . 'group your identifying group. Please try again. ' . $user_id . ' ' . $group_id, 'bp-group-control'), 'error' );
