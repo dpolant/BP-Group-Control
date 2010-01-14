@@ -179,7 +179,7 @@ function bpgc_print_identifying_button( $group_id = false ){
 function bpgc_print_identifying_title(){
 	if ( bpgc_has_identifying() ) : ?>
     
-		<div id='bpgc-profile-identifying-group'><?php echo esc_attr( get_option("bpgc-text-before-identifying") ) ?> <a href= "<?php bpgc_the_identifying_group_permalink() ?>"> <?php bpgc_the_identifying_group_name() ?></a></div> 
+		<div class='bpgc-profile-identifying-group'><?php echo esc_attr( get_option("bpgc-text-before-identifying") ) ?> <a href= "<?php bpgc_the_identifying_group_permalink() ?>"> <?php bpgc_the_identifying_group_name() ?></a></div> 
         
   <?php //bpgc_print_identifying_button(); ?>
   
@@ -225,13 +225,15 @@ function bpgc_the_identifying_group_permalink(){
 
 	
 function bpgc_has_identifying($user_id = false){
-	global $bp, $site_members_template, $identifying_group;
+	global $bp, $site_members_template, $members_template, $identifying_group;
 	
 	if (!$user_id) {
 		if ($bp->displayed_user->id)
 			$user_id = $bp->displayed_user->id;
 		elseif ($site_members_template->member->id)
 			$user_id = $site_members_template->member->id;
+		elseif ( $members_template->member->user_id )
+			$user_id = $members_template->member->user_id;
 		else 
 			$user_id = $bp->loggedin_user->id;
 	}
