@@ -5,14 +5,14 @@ Plugin URI: http://danpolant.com/bp-group-control
 Description: Evolving set of features that give site/group admins more control over groups
 Author: Dan Polant
 Author URI: http://danpolant.com
-Version: .9
+Version: .9 BETA
 */
 
 //for wp_create_user
 		
 require_once(ABSPATH . WPINC . '/registration.php'); 
 require_once(ABSPATH . 'wp-admin/includes/user.php');
-
+/*
 //hack required to load BP first
 function bpgc_load_buddypress() {
 	//buddypress is loaded
@@ -36,13 +36,18 @@ function bpgc_load_buddypress() {
 	return false;
 }
 
-//load bp if its not activated
+//load bp if its activated but not loaded
 if ( bpgc_load_buddypress() ){
 	require_once( WP_PLUGIN_DIR . '/buddypress/bp-loader.php' );
 }
+*/
 
-require ( WP_PLUGIN_DIR . "/BP-Group-Control/bpgc-templatetags.php");
-require ( WP_PLUGIN_DIR . "/BP-Group-Control/bpgc-classes.php");
+function bpgc_bp_loaded(){
+	require ( WP_PLUGIN_DIR . "/BP-Group-Control/bpgc-templatetags.php");
+	require ( WP_PLUGIN_DIR . "/BP-Group-Control/bpgc-classes.php");
+}
+add_action('bp_init', 'bpgc_bp_loaded');
+
 function bpgc_core_add_admin_menu(){
 	add_options_page( __("BP-Groups-Control", 'buddypress'), __("BP-Groups-Control", 'buddypress'), 10, __("BP-Groups-Control", 'buddypress'), "bpgc_admin_settings" );
 }
@@ -478,9 +483,8 @@ function bpgc_add_member_save($method = NULL){
 							$to = $_POST['email'];
 							$subject = "Registration notice at " . get_option('blogname');
 							$message = "Message from " . get_option('blogname') . ": 
-							
-							"
-. $current_user->display_name . " has made you a member of the group " . $group->name . " on  " . get_option('blogname') . ". 
+"
+. $current_user->display_name . " has made you a member of the group " . $group->name . " on " . get_option('blogname') . ". 
 							
 Password: " . $pw . "
 Username: " . $_POST['username'];

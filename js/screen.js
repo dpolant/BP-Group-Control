@@ -12,27 +12,27 @@ jQuery(document).ready(function(){
 		
 		if ( this.checked ){
 			jQuery("input[name='pass'], input[name='conf_pass'], input[name='send']").attr("disabled", "disabled");
-			jQuery("label[for='pass'], label[for='conf_pass'], label[for='send']").css("opacity", .5)
+			jQuery("label[for='pass'], label[for='conf_pass'], label[for='send']").css("opacity", .5);
 		} else {
 			jQuery("input[name='pass'], input[name='conf_pass'], input[name='send']").removeAttr("disabled");
-			jQuery("label[for='pass'], label[for='conf_pass'], label[for='send']").css("opacity", 1)
+			jQuery("label[for='pass'], label[for='conf_pass'], label[for='send']").css("opacity", 1);
 		}
 	});
 	
 	jQuery("input[name='send']").change(function(){
-		
+
 		if ( this.checked ){
-			jQuery("input[name='send-email']").attr("disabled", "disabled");
-			jQuery("label[for='send-email']").css("opacity", .5)
+			jQuery("input[name='send-email[]']").attr("disabled", "disabled");
+			jQuery("label[for='send-email[]']").css("opacity", .5);
 		} else {
-			jQuery("input[name='send-email']").removeAttr("disabled");
-			jQuery("label[for='send-email']").css("opacity", 1)
+			jQuery("input[name='send-email[]']").removeAttr("disabled");
+			jQuery("label[for='send-email[]']").css("opacity", 1);
 		}
 	});
 	
-	jQuery("input[name='reassign[]']").change(function(){
+	jQuery("input[name='reassign']").change(function(){
 		//alert("hi");										   
-		if ( jQuery("input[name='reassign[]']:checked").val() == "reassign-to" )											   
+		if ( jQuery("input[name='reassign']:checked").val() == "reassign-to" )											   
 			jQuery("select[name='reassign-select']").fadeIn();
 		else
 			jQuery("select[name='reassign-select']").fadeOut();
