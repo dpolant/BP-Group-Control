@@ -120,6 +120,7 @@ function bpgc_identifying_button_is_printable(){
 }
 	
 function bpgc_print_identifying_button( $group_id = false ){
+
 	global $bp, $groups_template, $current_user, $identifying_group, $members_template;
 
 	if ( !$group_id ){
@@ -145,13 +146,13 @@ function bpgc_print_identifying_button( $group_id = false ){
 		if ( bp_is_group_home() || $bp->displayed_user->id == $bp->loggedin_user->id ){
 			
 			if ( bpgc_has_identifying_group($group->id) ){ ?>
-				<div class="generic-button group-button">
+				<div class="generic-button group-button bpgc-identifying">
 					<a class="leave-group" href="<?php echo wp_nonce_url( bp_get_group_permalink( $group ) . "/remove-identifying", 'bpgc_remove_identifying')?>">Remove identifying</a>
 				</div>
 	
 	<?php } else{ ?>
 	
-				<div class="generic-button group-button">
+				<div class="generic-button group-button bpgc-identifying">
 					<a class="send-message" href="<?php echo wp_nonce_url( bp_get_group_permalink( $group ) . "/identifying", 'bpgc_make_identifying')?>">Make identifying</a>
 				</div>
 		
@@ -161,13 +162,13 @@ function bpgc_print_identifying_button( $group_id = false ){
 		else if ( is_site_admin() || ( $bp->is_item_admin && bp_is_group_admin_screen( 'manage-members' ) ) ){	
 
 			if ( bpgc_has_identifying_group($group->id, $user_id )){ ?>
-				<div class="generic-button group-button">
+				<div class="generic-button group-button bpgc-identifying">
 					<a class="leave-group" href="<?php echo wp_nonce_url( bp_get_group_permalink( $group ) . "/remove-identifying/" . $user_id, 'bpgc_remove_identifying')?>">Remove identifying</a>
 				</div>
 				
 	<?php } else { ?>        
 	
-				 <div class="generic-button group-button">
+				 <div class="generic-button group-button bpgc-identifying">
 								<a class="send-message" href="<?php echo wp_nonce_url( bp_get_group_permalink( $group ) . "/identifying/" . $user_id, 'bpgc_make_identifying')?>">Make identifying</a>
 				 </div>
 					
@@ -225,15 +226,17 @@ function bpgc_the_identifying_group_permalink(){
 
 	
 function bpgc_has_identifying($user_id = false){
-	global $bp, $site_members_template, $members_template, $identifying_group;
-	
+	global $bp, $site_members_template, $members_template, $identifying_group, $member;
+
 	if (!$user_id) {
 		if ($bp->displayed_user->id)
 			$user_id = $bp->displayed_user->id;
-		elseif ($site_members_template->member->id)
+		elseif ( $site_members_template->member->id )
 			$user_id = $site_members_template->member->id;
-		elseif ( $members_template->member->user_id )
-			$user_id = $members_template->member->user_id;
+		elseif ( $members_template->member->id )
+			$user_id = $members_template->member->id;
+		elseif ( $member->user_id )
+			$user_id = $member->user_id;
 		else 
 			$user_id = $bp->loggedin_user->id;
 	}

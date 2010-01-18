@@ -90,21 +90,21 @@ add_action( 'wp_ajax_bpgc_create_screen_add_members_save', 'bpgc_create_screen_a
  * on a user-to-user basis
  */
 function bpgc_identifying_conditional_actions(){
-	echo "yo";
+
 	if ( get_option( 'bpgc-identifying-enable-public' ) || get_option( 'bpgc-identifying-enable-private' )) {
-		add_action( 'wp', 'bpgc_make_identifying', 3 );
-		add_action( 'wp', 'bpgc_remove_identifying', 3 );
+		add_action( 'wp', 'bpgc_make_identifying', 3);
+		add_action( 'wp', 'bpgc_remove_identifying', 3);
 		add_action( 'bpgc_eject_member', 'bpgc_do_remove_identifying', 1);
 		add_action( 'groups_remove_data_for_user', 'bpgc_do_remove_identifying', 1);
 		add_action( 'groups_uninvite_user', 'bpgc_do_remove_identifying', 10, 2);
 		add_action( 'bp_directory_members_item', 'bpgc_print_identifying_title');
-		add_action('bp_profile_header_content', 'bpgc_print_identifying_title');
+		add_action('bp_before_member_header_meta', 'bpgc_print_identifying_title');
 		//add_action( 'bp_group_manage_members_admin_item', 'bpgc_print_identifying_button' );
 		
 		if ( get_option( 'bpgc-users-can-select-identifying' ) || is_site_admin() ) {
-			add_action( 'bp_profile_header_content', 'bpgc_print_identifying_button');
+			add_action( 'bp_profile_header_meta', 'bpgc_print_identifying_button');
 			add_action( 'bp_group_header_meta', 'bpgc_print_identifying_button' );
-			add_action( 'bp_before_my_groups_list_item', 'bpgc_print_identifying_button' );			
+			add_action( 'bp_directory_groups_actions', 'bpgc_print_identifying_button' );			
 		}
 		
 		if ( get_option( 'bpgc-group-admins-can-select-identifying' ) || is_site_admin() )
@@ -247,12 +247,12 @@ function bpgc_confirm_eject_member(){
  */
 function bpgc_make_identifying(){
 	global $bp, $current_user;
-	
-	if ( !( $bp->current_component == $bp->groups->slug && 'identifying' == $bp->current_action ) )
-		return;
+
+	if ( !$bp->is_single_item || $bp->current_component != $bp->groups->slug || 'identifying' != $bp->current_action   )
+		return false;
 
 	check_admin_referer('bpgc_make_identifying');
-
+			
 		if ($bp->action_variables[0] && ( is_site_admin() || $bp->is_item_admin ) )
 			$user_id = $bp->action_variables[0];
 		else

@@ -37,6 +37,8 @@ jQuery(document).ready(function(){
 		else
 			jQuery("select[name='reassign-select']").fadeOut();
 	});
+	
+	jQuery("div.bpgc-identifying a").die();
 	/*
 	jQuery(".activity-list a").hover(
 		function(){
