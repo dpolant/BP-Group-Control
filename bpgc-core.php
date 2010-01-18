@@ -12,35 +12,6 @@ Version: .9 BETA
 		
 require_once(ABSPATH . WPINC . '/registration.php'); 
 require_once(ABSPATH . 'wp-admin/includes/user.php');
-/*
-//hack required to load BP first
-function bpgc_load_buddypress() {
-	//buddypress is loaded
-	if ( function_exists( 'bp_core_setup_globals' ) )
-		return false;
-	
-	// Get the list of active sitewide plugins 
-	$active_sitewide_plugins = maybe_unserialize( get_site_option( 'active_sitewide_plugins' ) );
-	$bp_activated = $active_sitewide_plugins['buddypress/bp-loader.php'];
-	
-	//bp is not activated
-	if ( !$bp_activated ){
-		return false;
-	}
-	
-	//bp is activated but not yet loaded
-	if ( $bp_activated ) {
-		return true;
-	}
-
-	return false;
-}
-
-//load bp if its activated but not loaded
-if ( bpgc_load_buddypress() ){
-	require_once( WP_PLUGIN_DIR . '/buddypress/bp-loader.php' );
-}
-*/
 
 function bpgc_bp_loaded(){
 	require ( WP_PLUGIN_DIR . "/BP-Group-Control/bpgc-templatetags.php");
@@ -119,7 +90,7 @@ add_action( 'wp_ajax_bpgc_create_screen_add_members_save', 'bpgc_create_screen_a
  * on a user-to-user basis
  */
 function bpgc_identifying_conditional_actions(){
-
+	echo "yo";
 	if ( get_option( 'bpgc-identifying-enable-public' ) || get_option( 'bpgc-identifying-enable-private' )) {
 		add_action( 'wp', 'bpgc_make_identifying', 3 );
 		add_action( 'wp', 'bpgc_remove_identifying', 3 );
@@ -132,7 +103,7 @@ function bpgc_identifying_conditional_actions(){
 		
 		if ( get_option( 'bpgc-users-can-select-identifying' ) || is_site_admin() ) {
 			add_action( 'bp_profile_header_content', 'bpgc_print_identifying_button');
-			add_action( 'bp_group_menu_buttons', 'bpgc_print_identifying_button' );
+			add_action( 'bp_group_header_meta', 'bpgc_print_identifying_button' );
 			add_action( 'bp_before_my_groups_list_item', 'bpgc_print_identifying_button' );			
 		}
 		
